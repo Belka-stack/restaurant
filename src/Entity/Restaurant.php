@@ -40,9 +40,6 @@ class Restaurant
     #[ORM\Column(nullable: true)]
     private ?\DateTime $updatedAt = null;
 
-    #[ORM\OneToOne(inversedBy: 'restaurant', cascade: ['persist', 'remove'])]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?User $owner = null;
 
     /**
      * @var Collection<int, Picture>
@@ -166,18 +163,6 @@ class Restaurant
     public function setUpdatedAt(?\DateTime $updatedAt): static
     {
         $this->updatedAt = $updatedAt;
-
-        return $this;
-    }
-
-    public function getOwner(): ?User
-    {
-        return $this->owner;
-    }
-
-    public function setOwner(User $owner): static
-    {
-        $this->owner = $owner;
 
         return $this;
     }
