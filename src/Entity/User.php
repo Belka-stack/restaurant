@@ -44,6 +44,9 @@ class User
     #[ORM\Column(nullable: true)]
     private ?\DateTime $updatedAt = null;
 
+    #[ORM\OneToOne(mappedBy: 'owner', cascade: ['persist', 'remove'])]
+    private ?Restaurant $restaurant = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -165,6 +168,23 @@ class User
     public function setUpdatedAt(?\DateTime $updatedAt): static
     {
         $this->updatedAt = $updatedAt;
+
+        return $this;
+    }
+
+    public function getRestaurant(): ?Restaurant
+    {
+        return $this->restaurant;
+    }
+
+    public function setRestaurant(Restaurant $restaurant): static
+    {
+        // set the owning side of the relation if necessary
+        if ($restaurant->getOwner() !== $this) {
+            $restaurant->setOwner($this);
+        }
+
+        $this->restaurant = $restaurant;
 
         return $this;
     }
