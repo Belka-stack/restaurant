@@ -33,9 +33,16 @@ class Category
     #[ORM\OneToMany(targetEntity: MenuCategory::class, mappedBy: 'category', orphanRemoval: true)]
     private Collection $menuCategories;
 
+    /**
+     * @var Collection<int, FoodCategory>
+     */
+    #[ORM\OneToMany(targetEntity: FoodCategory::class, mappedBy: 'category', orphanRemoval: true)]
+    private Collection $foodCategories;
+
     public function __construct()
     {
         $this->menuCategories = new ArrayCollection();
+        $this->foodCategories = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -115,6 +122,36 @@ class Category
             // set the owning side to null (unless already changed)
             if ($menuCategory->getCategory() === $this) {
                 $menuCategory->setCategory(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, FoodCategory>
+     */
+    public function getFoodCategories(): Collection
+    {
+        return $this->foodCategories;
+    }
+
+    public function addFoodCategory(FoodCategory $foodCategory): static
+    {
+        if (!$this->foodCategories->contains($foodCategory)) {
+            $this->foodCategories->add($foodCategory);
+            $foodCategory->setCategory($this);
+        }
+
+        return $this;
+    }
+
+    public function removeFoodCategory(FoodCategory $foodCategory): static
+    {
+        if ($this->foodCategories->removeElement($foodCategory)) {
+            // set the owning side to null (unless already changed)
+            if ($foodCategory->getCategory() === $this) {
+                $foodCategory->setCategory(null);
             }
         }
 
