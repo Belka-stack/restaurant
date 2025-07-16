@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\MenuRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -35,6 +37,17 @@ class Menu
     #[ORM\ManyToOne(inversedBy: 'menus')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Restaurant $restaurant = null;
+
+    /**
+     * @var Collection<int, MenuCategory>
+     */
+    #[ORM\OneToMany(targetEntity: MenuCategory::class, mappedBy: 'menu', orphanRemoval: true)]
+    private Collection $menuCategories;
+
+    public function __construct()
+    {
+        $this->menuCategories = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -121,6 +134,36 @@ class Menu
     public function setRestaurant(?Restaurant $restaurant): static
     {
         $this->restaurant = $restaurant;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, MenuCategory>
+     */
+    public function getMenuCategories(): Collection
+    {
+        return $this->menuCategories;
+    }
+
+    public function addMenuCategory(MenuCategory $menuCategory): static
+    {
+        if (!$this->menuCategories->contains($menuCategory)) {
+            $this->menuCategories->add($menuCategory);
+            $menuCategory->setMenu($this);
+        }
+
+        return $this;
+    }
+
+    public function removeMenuCategory(MenuCategory $menuCategory): static
+    {
+        if ($this->menuCategories->removeElement($menuCategory)) {
+            // set the owning side to null (unless already changed)
+            if ($menuCategory->getMenu() === $this) {
+                $menuCategory->setMenu(null);
+            }
+        }
 
         return $this;
     }

@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\CategoryRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: CategoryRepository::class)]
@@ -24,6 +26,17 @@ class Category
 
     #[ORM\Column(nullable: true)]
     private ?\DateTime $updatedAt = null;
+
+    /**
+     * @var Collection<int, MenuCategory>
+     */
+    #[ORM\OneToMany(targetEntity: MenuCategory::class, mappedBy: 'category', orphanRemoval: true)]
+    private Collection $menuCategories;
+
+    public function __construct()
+    {
+        $this->menuCategories = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -74,6 +87,36 @@ class Category
     public function setUpdatedAt(?\DateTime $updatedAt): static
     {
         $this->updatedAt = $updatedAt;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, MenuCategory>
+     */
+    public function getMenuCategories(): Collection
+    {
+        return $this->menuCategories;
+    }
+
+    public function addMenuCategory(MenuCategory $menuCategory): static
+    {
+        if (!$this->menuCategories->contains($menuCategory)) {
+            $this->menuCategories->add($menuCategory);
+            $menuCategory->setCategory($this);
+        }
+
+        return $this;
+    }
+
+    public function removeMenuCategory(MenuCategory $menuCategory): static
+    {
+        if ($this->menuCategories->removeElement($menuCategory)) {
+            // set the owning side to null (unless already changed)
+            if ($menuCategory->getCategory() === $this) {
+                $menuCategory->setCategory(null);
+            }
+        }
 
         return $this;
     }
