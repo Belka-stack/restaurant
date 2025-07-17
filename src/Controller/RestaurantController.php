@@ -38,7 +38,7 @@ final class RestaurantController extends AbstractController
         );
     }
 
-    #[Route('/{id}', name: 'show', methods: 'GET')]
+    #[Route('/{id}', name: 'show', methods: ['GET'])]
     public function show(int $id): Response
     {
         $restaurant = $this->repository->findOneBy(['id' => $id]);
@@ -52,7 +52,7 @@ final class RestaurantController extends AbstractController
         );
     }
 
-    #[Route('/{id}', name: 'edit', methods: 'PUT')]
+    #[Route('/{id}', name: 'edit', methods: ['PUT'])]
     public function edit(int $id): Response
     {
         $restaurant = $this->repository->findOneBy(['id' => $id]);
@@ -67,7 +67,7 @@ final class RestaurantController extends AbstractController
         return $this->redirectToRoute('app_api_restaurant_show', ['id' => $restaurant->getId()]);
     }
 
-    #[Route('/{id}', name: 'delete', methods: 'DELETE')]
+    #[Route('/{id}', name: 'delete', methods:['DELETE'])]
     public function delete(int $id): Response
     {
         $restaurant = $this-> repository->findOneBy(['id' => $id]);
