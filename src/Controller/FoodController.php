@@ -95,6 +95,6 @@ final class FoodController extends AbstractController
         $this->manager->remove($food);
         $this->manager->flush();
 
-        return new JsonResponse(['message' => "Food resource deleted"], Response::HTTP_NOT_CONTENT);
+        return new JsonResponse(['message' => "Food resource deleted"], Response::HTTP_NO_CONTENT);
     }
 }
