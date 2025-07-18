@@ -96,7 +96,7 @@ final class RestaurantController extends AbstractController
         $this->manager->remove($restaurant);
         $this->manager->flush();
 
-        return new JsonResponse(['message' => "Restaurant resource deleted"], Response::HTTP_NO_CONTENT);
+        return new JsonResponse(['message' => "Food resource deleted"], Response::HTTP_NOT_CONTENT);
     }
 
 }

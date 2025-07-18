@@ -25,8 +25,8 @@ class Food
     #[ORM\Column(type: Types::TEXT)]
     private ?string $description = null;
 
-    #[ORM\Column(type: Types::SMALLINT)]
-    private ?int $price = null;
+    #[ORM\Column(type: Types::FLOAT)]
+    private ?float $price = null;
 
     #[ORM\Column]
     private ?\DateTime $createdAt = null;
@@ -86,7 +86,7 @@ class Food
         return $this;
     }
 
-    public function getPrice(): ?int
+    public function getPrice(): ?float
     {
         return $this->price;
     }

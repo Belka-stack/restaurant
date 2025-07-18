@@ -35,7 +35,7 @@ final class FoodController extends AbstractController
         $this->manager->flush();
 
         $responseData = $this->serializer->serialize($food, 'json');
-        $locatin = $this->urlGenerator->generate('app_api_food_show', ['id' => $food->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
+        $location = $this->urlGenerator->generate('app_api_food_show', ['id' => $food->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
 
         return new JsonResponse(
             $responseData,
@@ -54,7 +54,7 @@ final class FoodController extends AbstractController
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
 
-        $responseData = $this-serializer->serialize($food, 'json');
+        $responseData = $this->serializer->serialize($food, 'json');
 
         return new JsonResponse($responseData, Response::HTTP_OK, [], true);
     }
@@ -68,12 +68,19 @@ final class FoodController extends AbstractController
             throw $this->createNotFoundException("No Food found for ID {$id}");
         }
 
-        $food->setTitle('Updated food title');
+        $this->serializer->deserialize(
+            $request->getContent(),
+            Food::class,
+            'json',
+            ['object_to_populate' => $food]
+        );
+
+
         $food->setUpdatedAt(new DateTime());
 
         $this->manager->flush();
 
-        return $this->redirectToRoute('app_api_food_show', ['id' => $food->getId()]);
+        return new JsonResponse(['message' => 'Food updated'], Response::HTTP_OK);
     }
 
     #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
@@ -88,8 +95,6 @@ final class FoodController extends AbstractController
         $this->manager->remove($food);
         $this->manager->flush();
 
-        return $this->json([
-            'message' => "Food resource deleted successfully"
-        ], Response::HTTP_NO_CONTENT);
+        return new JsonResponse(['message' => "Food resource deleted"], Response::HTTP_NOT_CONTENT);
     }
 }
