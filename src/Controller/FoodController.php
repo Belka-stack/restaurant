@@ -8,52 +8,59 @@ use Symfony\Component\Uid\Uuid;
 use App\Repository\FoodRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\{Response, JsonResponse, Request};
 
 #[Route('api/food', name: 'app_api_food_')]
 final class FoodController extends AbstractController
 {
-    public function __construct(private EntityManagerInterface $manager, private FoodRepository $repository){}
+    public function __construct(
+        private EntityManagerInterface $manager, 
+        private FoodRepository $repository,
+        private SerializerInterface $serializer,
+        private UrlGeneratorInterface $urlGenerator
+        )
+        {}
 
     #[Route('/new', methods: ['POST'])]
-    public function new(): Response
+    public function new(Request $request): JsonResponse
     {
-        $food = new Food();
-        $food->setTitle('Ravioles au foie gras');
-        $food->setDescription("Délicieuses ravioles du Dauphiné avec sauce au foie gras.");
-        $food->setPrice(25);
+        $food = $this->serializer->deserialize($request->getContent(), Food::class, 'json');
         $food->setUuid(Uuid::v4()->toRfc4122());
         $food->setCreatedAt(new DateTime());
 
         $this->manager->persist($food);
         $this->manager->flush();
 
+        $responseData = $this->serializer->serialize($food, 'json');
+        $locatin = $this->urlGenerator->generate('app_api_food_show', ['id' => $food->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
 
-        return $this->json([
-            'message' => "Food resource created with ID: {$food->getId()}",
-        ], Response::HTTP_CREATED);
+        return new JsonResponse(
+            $responseData,
+            Response::HTTP_CREATED,
+            ['Location' => $location],
+            true // données déjà en JSON
+        );
     }
 
     #[Route('/{id}', name: 'show', methods: ['GET'])]
-    public function show(int $id): Response
+    public function show(int $id): JsonResponse
     {
         $food = $this->repository->findOneBy(['id' => $id]);
 
         if (!$food) {
-            throw $this->createNotFoundException("No Food found for ID {$id}");
+            return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
 
-        return $this->json([
-            'title' => $food->getTitle(),
-            'description' => $food->getDescription(),
-            'price' => $food->getPrice(),
-            'uuid' => $food->getUuid(),
-        ]);
+        $responseData = $this-serializer->serialize($food, 'json');
+
+        return new JsonResponse($responseData, Response::HTTP_OK, [], true);
     }
 
     #[Route('/{id}', name: 'edit', methods: ['PUT'])]
-    public function edit(int $id): Response
+    public function edit(int $id, Request $request): JsonResponse
     {
         $food = $this->repository->findOneBy(['id' => $id]);
 

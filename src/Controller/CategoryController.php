@@ -23,7 +23,7 @@ final class CategoryController extends AbstractController
     #[Route('/new', name: 'new', methods: ['POST'])]
     public function new(): Response
     {
-        $category = new Category();
+        $category = $this->serializer->deserialize($request->getContent(), Category::class, 'json');
         $category->setTitle('Plats principaux');
         $category->setUuid(Uuid::v4()->toRfc4122());
         $category->setCreatedAt(new DateTime());
