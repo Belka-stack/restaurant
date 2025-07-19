@@ -13,7 +13,7 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\{Response, JsonResponse, Request};
 
-#[Route('api/food', name: 'app_api_food_')]
+#[Route('/api/food', name: 'app_api_food_')]
 final class FoodController extends AbstractController
 {
     public function __construct(
