@@ -7,9 +7,9 @@ use App\Entity\Category;
 use Symfony\Component\Uid\Uuid;
 use App\Repository\CategoryRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\{JsonResponse, Response, Request};
+use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 #[Route('/api/category', name: 'app_api_category_')]
@@ -17,14 +17,14 @@ final class CategoryController extends AbstractController
 {
     public function __construct(
         private EntityManagerInterface $manager, 
-        private CategoryRepository $repository)
-    {}
+        private CategoryRepository $repository,
+        private SerializerInterface $serializer
+        ){}
 
     #[Route('/new', name: 'new', methods: ['POST'])]
-    public function new(): Response
+    public function new(Request $request): JsonResponse
     {
         $category = $this->serializer->deserialize($request->getContent(), Category::class, 'json');
-        $category->setTitle('Plats principaux');
         $category->setUuid(Uuid::v4()->toRfc4122());
         $category->setCreatedAt(new DateTime());
 
@@ -32,17 +32,19 @@ final class CategoryController extends AbstractController
         $this->manager->flush();
 
         return $this->json([
-            'message' => "Category created with ID: {$category->getId()}",
+            'message' =>'Category created successfully',
+            'id' => $category->getId(),
+            'uuid' => $category->getUuid(),
         ], Response::HTTP_CREATED);
     }
 
     #[Route('/{id}', name: 'show', methods: ['GET'])]
-    public function show(int $id): Response
+    public function show(int $id): JsonResponse
     {
         $category = $this->repository->find($id);
 
         if (!$category) {
-            throw $this->createNotFoundException("No Category found for ID {$id}");
+            return $this->json(['error' => "No Category found for ID {$id}"], Response::HTTP_NOT_FOUND);
         }
 
         return $this->json([
@@ -55,36 +57,42 @@ final class CategoryController extends AbstractController
     }
 
     #[Route('/{id}', name: 'edit', methods: ['PUT'])]
-    public function edit(int $id): Response
+    public function edit(int $id, Request $request): JsonResponse
     {
         $category = $this->repository->find($id);
 
         if (!$category) {
-            throw $this->createNotFoundException("No Category found for ID {$id}");
+            return $this->json(['error' => "No Category found for ID {$id}"], Response::HTTP_NOT_FOUND);
         }
 
-        $category->setTitle('Catégorie modifiée');
+        $data = json_decode($request->getContent(), true);
+
+        if (isset($data['title'])) {
+            $category->setTitle($data['title']);
+        }
+
         $category->setUpdatedAt(new DateTime());
 
         $this->manager->flush();
 
-        return $this->redirectToRoute('app_api_category_show', ['id' => $category->getId()]);
+        return $this->json([
+        'message' => "Category updated successfully",
+        'id' => $category->getId()
+        ]);
     }
 
     #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
-    public function delete(int $id): Response
+    public function delete(int $id): JsonResponse
     {
         $category = $this->repository->find($id);
 
         if (!$category) {
-            throw $this->createNotFoundException("No Category found for ID {$id}");
+            return $this->json(['error' => "No Category found for ID {$id}"], Response::HTTP_NOT_FOUND);
         }
 
         $this->manager->remove($category);
         $this->manager->flush();
 
-        return $this->json([
-            'message' => "Category deleted successfully",
-        ], Response::HTTP_NO_CONTENT);
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 }
