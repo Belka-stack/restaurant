@@ -8,7 +8,7 @@ security:
         app_user_provider:
             entity:
                 class: App\Entity\User
-                property: email
+                property: apiToken
     firewalls:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
@@ -16,6 +16,7 @@ security:
         main:
             lazy: true
             provider: app_user_provider
+            pattern: ^/api
             stateless: true
             json_login:
                     check_path: app_api_login

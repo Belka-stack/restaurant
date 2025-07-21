@@ -7,6 +7,7 @@ use Symfony\Component\Uid\Uuid;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\{JsonResponse, Request, Response};
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
@@ -48,6 +49,69 @@ final class SecurityController extends AbstractController
             'apiToken' => $user->getApiToken(),
             'roles' => $user->getRoles(),
         ]);
+    }
+
+    //Route /account/me : Cette route utilise l'attribut #[CurrentUser] pour récupérer l'utilisateur actuellement authentifié et retourne ses informations sous forme de réponse JSON.
+
+
+
+    #[Route('/account/me', name: 'account_me', methods: ['GET'])]
+    public function me(#[CurrentUser] ?User $user): JsonResponse
+    {
+        $user = $this->getUser();
+
+        if (null instanceof User) {
+            return $this->json(['message' => 'User not found'], 404);
+        }
+
+        $data = [
+            'id' => $user->getId(),
+            'email' => $user->getEmail(),
+            'firstName' => $user->getFirstname(),
+            'lastName' => $user->getLastName(),
+            'guestNumber' => $user->getGuestNumber(),
+            'allergy' => $user->getAllergy(),
+        ];
+        return new JsonResponse($data);
+    }
+
+    // Route /account/edit : Cette route attend une requête PUT avec un corps JSON contenant les champs à mettre à jour. Elle met à jour les informations de l'utilisateur, y compris le mot de passe (qui est haché avant d'être stocké) et la date de mise à jour.
+
+
+    #[Route('/account/edit', name: 'account_edit', methods: ['PUT'])]
+    public function edit(Request $request, UserPasswordHasherInterface $passwordHasher, #[CurrentUser] ?User $user): JsonResponse
+    {
+        if (null === $user) {
+            return new JsonResponse(['message' => 'User not found'],
+            Response::HTTP_UNAUTHORIZED);
+        }
+
+        $data = json_decode($request->getContent(), true);
+
+        if (null === $data) {
+            return new JsonResponse(['message' => 'Invalid JSON'], Response::HTTP_BAD_REQUEST);
+        }
+
+        if (isset($data['firstName'])){
+            $user->setFirstName($data['firstName']);
+        }
+        if (isset($data['lastName'])){
+            $user->setLastName($data['lastName']);
+        }
+        if (isset($data['guestNumber'])){
+            $user->setGuestNumber($data['guestNumber']);
+        }
+        if (isset($data['allergy'])){
+            $user->setAllergy($data['allergy']);
+        }
+        if (isset($data['password'])){
+            $user->setPassword($passwordHasher->hashPassword($user, $data['password']));
+        }
+
+        $user->setUpdatedAt(new \DateTime());
+        $this->manager->flush();
+
+        return new JsonResponse(['status' => 'User updated ']);
     }
 
 }
