@@ -2,7 +2,9 @@
 
 namespace App\Controller;
 
+
 use App\Entity\User;
+use OpenApi\Attributes as OA;
 use Symfony\Component\Uid\Uuid;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Routing\Attribute\Route;
@@ -20,6 +22,29 @@ final class SecurityController extends AbstractController
 
     }
     #[Route('/registration', name: 'registration', methods: ['POST'])]
+    // Ajout d'attributs à la route /registration
+    #[OA\Post(
+    path: '/api/registration',
+    summary: "Inscription d'un nouvel utilisateur",
+    tags: ['Security'],
+    requestBody: new OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['email', 'password'],
+            properties: [
+                new OA\Property(property: 'email', type: 'string', example: 'user@example.com'),
+                new OA\Property(property: 'password', type: 'string', example: 'password123'),
+                new OA\Property(property: 'firstName', type: 'string', example: 'Jean'),
+                new OA\Property(property: 'lastName', type: 'string', example: 'Dupont'),
+            ]
+        )
+    ),
+    responses: [
+        new OA\Response(response: 201, description: 'Utilisateur créé'),
+        new OA\Response(response: 400, description: 'Requête invalide'),
+    ]
+    )]
+
     public function register(Request $request, UserPasswordHasherInterface $passwordHasher): JsonResponse
     {
         $user = $this->serializer->deserialize($request->getContent(), User::class, 'json');
