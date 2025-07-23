@@ -14,6 +14,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\{JsonResponse, Request, Response};
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
+// Les routes comportent des attributs permettant faire des test sur le Bundle Nelmio à l'url suivante : https://127.0.0.1:8000/api/doc afin d'améliorer la documentation.Un template Twig a été générer specifique via la commande : composer require twig asset
 #[Route('/api', name: 'app_api_')]
 final class SecurityController extends AbstractController
 {
@@ -22,7 +23,7 @@ final class SecurityController extends AbstractController
 
     }
     #[Route('/registration', name: 'registration', methods: ['POST'])]
-    // Ajout d'attributs à la route /registration
+    // Documantation API: Attributs à la route /registration
     #[OA\Post(
     path: '/api/registration',
     summary: "Inscription d'un nouvel utilisateur",
@@ -63,6 +64,26 @@ final class SecurityController extends AbstractController
     }
 
     #[Route('/login', name: 'login', methods: 'POST')]
+    // Documantation API: Ajout d'attributs à la route /login
+    #[OA\Post(
+    path: '/api/login',
+    summary: 'Connexion d\'un utilisateur',
+    tags: ['Security'],
+    requestBody: new OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            required: ['email', 'password'],
+            properties: [
+                new OA\Property(property: 'email', type: 'string', example: 'lisa@gmail.com'),
+                new OA\Property(property: 'password', type: 'string', example: 'password'),
+            ]
+        )
+    ),
+    responses: [
+        new OA\Response(response: 200, description: 'Authentification réussie'),
+        new OA\Response(response: 401, description: 'Identifiants manquants ou incorrects'),
+    ]
+    )]
     public function login(#[CurrentUser] ?User $user): JsonResponse
     {
         if (null === $user) {
@@ -81,6 +102,31 @@ final class SecurityController extends AbstractController
 
 
     #[Route('/account/me', name: 'account_me', methods: ['GET'])]
+    // Documantation API: Ajout d'attributs à la route /account/me
+    #[OA\Get(
+    path: '/api/account/me',
+    summary: 'Retourne les informations de l\'utilisateur connecté',
+    security: [ ['X-AUTH-TOKEN' => []] ], //security={{"Bearer":{}}} sur chaque méthode annotée OpenAPI (cela permet à Swagger/Nelmio d’exiger un token Bearer pour tester ces routes)
+    tags: ['Security'],
+    responses: [
+        new OA\Response(
+            response: 200,
+            description: 'Informations de l\'utilisateur',
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'id', type: 'integer'),
+                    new OA\Property(property: 'email', type: 'string'),
+                    new OA\Property(property: 'firstName', type: 'string'),
+                    new OA\Property(property: 'lastName', type: 'string'),
+                    new OA\Property(property: 'guestNumber', type: 'integer'),
+                    new OA\Property(property: 'allergy', type: 'string'),
+                ]
+            )
+        ),
+        new OA\Response(response: 404, description: 'Utilisateur non trouvé')
+    ]
+    )]
+
     public function me(#[CurrentUser] ?User $user): JsonResponse
     {
         $user = $this->getUser();
@@ -104,6 +150,31 @@ final class SecurityController extends AbstractController
 
 
     #[Route('/account/edit', name: 'account_edit', methods: ['PUT'])]
+    // Documantation API: Ajout d'attributs à la route /account/edit
+    #[OA\Put(
+    path: '/api/account/edit',
+    summary: 'Met à jour les informations de l\'utilisateur connecté',
+    security: [ ['X-AUTH-TOKEN' => []] ],
+    tags: ['Security'],
+    requestBody: new OA\RequestBody(
+        required: true,
+        content: new OA\JsonContent(
+            properties: [
+                new OA\Property(property: 'firstName', type: 'string', example: 'Alice'),
+                new OA\Property(property: 'lastName', type: 'string', example: 'Durand'),
+                new OA\Property(property: 'guestNumber', type: 'integer', example: 2),
+                new OA\Property(property: 'allergy', type: 'string', example: 'gluten'),
+                new OA\Property(property: 'password', type: 'string', example: 'newpassword123'),
+            ]
+        )
+    ),
+    responses: [
+        new OA\Response(response: 200, description: 'Utilisateur mis à jour'),
+        new OA\Response(response: 400, description: 'Requête invalide'),
+        new OA\Response(response: 401, description: 'Non authentifié')
+    ]
+    )]
+
     public function edit(Request $request, UserPasswordHasherInterface $passwordHasher, #[CurrentUser] ?User $user): JsonResponse
     {
         if (null === $user) {
