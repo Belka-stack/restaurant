@@ -55,6 +55,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(nullable: true)]
     private ?\DateTime $updatedAt = null;
+    
 
     public function getId(): ?int
     {
