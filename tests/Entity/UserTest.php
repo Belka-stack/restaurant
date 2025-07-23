@@ -18,4 +18,5 @@ final class UserTest extends TestCase
         $user = new User();
         $this->assertContains('ROLE_USER', $user->getRoles());
     }
+
 }

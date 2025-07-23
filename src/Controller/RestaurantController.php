@@ -145,7 +145,7 @@ final class RestaurantController extends AbstractController
         $restaurant = $this->repository->findOneBy(['id' => $id]);
 
         if (!$restaurant) {
-            throw $this->createNotFoundExeception("No Restaurant found for {$id} id");
+            throw $this->createNotFoundException("No Restaurant found for {$id} id");
         }
 
         // Hydrate partiellement l'objet avec les nouvelles données JSON
