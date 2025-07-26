@@ -4,6 +4,7 @@ namespace App\DataFixtures;
 
 use DateTime;
 use Exception;
+use Faker\Factory;
 use App\Entity\Picture;
 use App\Entity\Restaurant;
 use Doctrine\Persistence\ObjectManager;
@@ -13,16 +14,20 @@ use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 
 class PictureFixtures extends Fixture implements DependentFixtureInterface
 {
+    public const PICTURE_NB_TUPLES = 20;
+
     /** @throws Exception */
     public function load(ObjectManager $manager): void
     {
-        for ($i = 1; $i <= 20; $i++){
+        $faker = Factory::create('fr_FR');
+        
+        for ($i = 1; $i <= self::PICTURE_NB_TUPLES; $i++){
             /** @var Restaurant $restaurant */
             $restaurant = $this->getReference("restaurant" . random_int(1, 5), Restaurant::class);
             
             $picture = (new Picture())
-                ->setTitre("Article n°$i")
-                ->setSlug("slug-article-title")
+                ->setTitre($faker->words(nb: 3, asText: true))
+                ->setSlug($faker->slug())
                 ->setRestaurant($restaurant)
                 ->setCreatedAt(new DateTime());
 

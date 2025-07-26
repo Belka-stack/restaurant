@@ -2,6 +2,7 @@
 
 namespace App\DataFixtures;
 
+use Faker\Factory;
 use App\Entity\Menu;
 use App\Entity\Category;
 use App\Entity\MenuCategory;
@@ -17,9 +18,20 @@ class MenuCategoryFixtures extends Fixture implements DependentFixtureInterface
     {
         // Crée 10 relations Menu <-> Category
 
+        $faker = Factory::create('fr_FR');
+
         for ($i = 1; $i <= 10; $i++) {
-            $menu = $this->getReference("menu" . $i, Menu::class);
-            $category = $this->getReference("category" . $i, Category::class );
+
+            // Randomise les couples menu / category pour plus de réalisme
+
+            $menuId = $faker->numberBetween(1, MenuFixtures::MENU_NB_TUPLES);
+            $categoryId = $faker->numberBetween(1, CategoryFixtures::CATEGORY_NB_TUPLES ?? 10);
+
+            /** @var Menu $menu */
+            $menu = $this->getReference("menu" . $menuId, Menu::class);
+
+            /** @var Category $category */
+            $category = $this->getReference("category" . $categoryId, Category::class );
 
             $menuCategory = new MenuCategory();
             $menuCategory->setMenu($menu);

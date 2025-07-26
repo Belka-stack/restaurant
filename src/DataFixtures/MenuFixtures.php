@@ -3,6 +3,7 @@
 namespace App\DataFixtures;
 
 use DateTime;
+use Faker\Factory;
 use App\Entity\Menu;
 use App\Entity\Restaurant;
 use Symfony\Component\Uid\Uuid;
@@ -13,6 +14,8 @@ use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 
 class MenuFixtures extends Fixture implements DependentFixtureInterface
 {
+    public const MENU_NB_TUPLES = 10;
+
     public function load(ObjectManager $manager): void
     {
         // On récupère tous les restaurants
@@ -22,16 +25,19 @@ class MenuFixtures extends Fixture implements DependentFixtureInterface
         if (empty($restaurants)) {
             throw new \RuntimeException('Aucune restaurant trouvé.Veuillez créer des restaurants.');
         }
-        for ($i = 1; $i <= 10; $i++) {
+
+        $faker = Factory::create('fr_FR');
+        
+        for ($i = 1; $i <= self::MENU_NB_TUPLES; $i++) {
 
             /** @var Restaurant $restaurant */
             $restaurant = $this->getReference("restaurant" . random_int(1, 5), Restaurant::class);
 
             $menu = new Menu();
             $menu->setUuid(Uuid::v4()->toRfc4122())
-                ->setTitle("Menu #$i")
-                ->setDescription("Description du menu #$i avec des plats variés.")
-                ->setPrice(random_int(10, 50))
+                ->setTitle($faker->sentence(3))
+                ->setDescription($faker->paragraph(3))
+                ->setPrice($faker->numberBetween(10, 50))
                 ->setCreatedAt(new DateTime())
                 ->setUpdatedAt(null)
                 ->setRestaurant($restaurant);

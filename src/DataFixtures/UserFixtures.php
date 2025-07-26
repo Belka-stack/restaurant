@@ -8,6 +8,7 @@ use App\Entity\User;
 use Symfony\Component\Uid\Uuid;
 use Doctrine\Persistence\ObjectManager;
 use Doctrine\Bundle\FixturesBundle\Fixture;
+use Faker\Factory;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class UserFixtures extends Fixture
@@ -16,29 +17,38 @@ class UserFixtures extends Fixture
     {
 
     }
+
+    public const USER_NB_TUPLES = 20;
+    
     /** @throws Exception */
     public function load(ObjectManager $manager): void
     {
-        for ($i = 1; $i <= 20; $i++) {
+        $faker = Factory::create('fr_FR');
+
+        for ($i = 1; $i <= self::USER_NB_TUPLES; $i++) {
 
             $user = (new User())
-                ->setFirstName("Firstname $i")
-                ->setLastName("Lastname $i")
-                ->setGuestNumber(random_int(0,10))
-                ->setEmail("email.$i@studi.fr")
+                ->setFirstName($faker->firstName())
+                ->setLastName($faker->lastName())
+                ->setGuestNumber($faker->numberBetween(0,10))
+                ->setEmail($faker->unique()->safeEmail())
                 ->setCreatedAt(new DateTime())
                 ->setUuid(Uuid::v4()->toRfc4122());
 
-            $user->setPassword($this->passwordHasher->hashPassword($user, "password$i"));
+            
+            // Mot de passe fixe
+            $password = 'password';
+
+            $user->setPassword($this->passwordHasher->hashPassword($user, $password));
+
             $manager->persist($user);
 
             // Ajout de la référence pour l'utilser dans d'autres fixtures
 
             $this->addReference("user" . $i, $user);
 
-
-
         }
+
         $manager->flush();
     }
 }

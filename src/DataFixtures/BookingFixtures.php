@@ -3,6 +3,7 @@
 namespace App\DataFixtures;
 
 use DateTime;
+use Faker\Factory;
 use App\Entity\User;
 use App\Entity\Booking;
 use App\Entity\Restaurant;
@@ -15,30 +16,33 @@ use Doctrine\Common\DataFixtures\DependentFixtureInterface;
 
 class BookingFixtures extends Fixture implements DependentFixtureInterface
 {
+    public const BOOKING_NB_TUPLES = 10;
+
     public function load(ObjectManager $manager): void
     {
-        // Récupère tous les restaurant existants
 
-        $restaurants = $manager->getRepository(Restaurant::class)->findAll();
+        $faker = Factory::create('fr_FR');
 
-        if (empty($restaurants)) {
-            throw new \RuntimeException("Aucun restaurant trouvé.Crée d'abord des restaurants.");
-        }
-
-        for ($i = 1; $i <= 10; $i++) {
+        for ($i = 1; $i <= self::BOOKING_NB_TUPLES; $i++) {
 
             /** @var Restaurant $restaurant */
-            $restaurant = $this->getReference("restaurant" . random_int(1, 5), Restaurant::class);
+            $restaurant = $this->getReference(
+                "restaurant" . $faker->numberBetween(1, RestaurantFixtures::RESTAURANT_NB_TUPLES),
+                Restaurant::class
+            );
 
             /** @var User $user */
-            $user = $this->getReference("user" . random_int(1, 20), User::class );
+            $user = $this->getReference("user" . $faker->numberBetween(1, UserFixtures::USER_NB_TUPLES),
+            User::class
+
+            );
 
             $booking = (new Booking())
                 ->setUuid(Uuid::v4()->toRfc4122())
-                ->setGuestNumber(random_int(1, 6))
-                ->setOrderDate(new \DateTime("+".random_int(0, 10)." days"))
-                ->setOrderHour((new \DateTime())->setTime(random_int(12, 21), 0))
-                ->setAllergy(random_int(0, 1) ? 'Arachides' : null)
+                ->setGuestNumber($faker->numberBetween(1, 6))
+                ->setOrderDate($faker->dateTimeBetween('+1 days', '+15 days'))
+                ->setOrderHour($faker->dateTimeBetween('12:00', '21:00'))
+                ->setAllergy($faker->boolean(30) ? $faker->word() : null)
                 ->setCreatedAt(new DateTime())
                 ->setRestaurant($restaurant)
                 ->setUser($user);
