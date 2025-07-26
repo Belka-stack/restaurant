@@ -2,6 +2,7 @@
 
 namespace App\DataFixtures;
 
+use DateTime;
 use App\Entity\Food;
 use Symfony\Component\Uid\Uuid;
 use Doctrine\Persistence\ObjectManager;
@@ -17,9 +18,12 @@ class FoodFixtures extends Fixture
             ->setTitle("Plat $i")
             ->setDescription("Une description savoureuse pour le plat numéro $i.")
             ->setPrice(mt_rand(8, 25) + 0.99)
-            ->setCreatedAt(new \DateTime());
+            ->setCreatedAt(new DateTime());
         
             $manager->persist($food);
+
+            // Ajout de la référence pour d'autres fixtures
+            $this->addReference("food" . $i, $food);
 
         }
         

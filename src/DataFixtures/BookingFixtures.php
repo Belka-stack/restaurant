@@ -2,9 +2,12 @@
 
 namespace App\DataFixtures;
 
+use DateTime;
+use App\Entity\User;
 use App\Entity\Booking;
 use App\Entity\Restaurant;
 use Symfony\Component\Uid\Uuid;
+use App\DataFixtures\UserFixtures;
 use Doctrine\Persistence\ObjectManager;
 use App\DataFixtures\RestaurantFixtures;
 use Doctrine\Bundle\FixturesBundle\Fixture;
@@ -23,15 +26,23 @@ class BookingFixtures extends Fixture implements DependentFixtureInterface
         }
 
         for ($i = 1; $i <= 10; $i++) {
+
+            /** @var Restaurant $restaurant */
+            $restaurant = $this->getReference("restaurant" . random_int(1, 5), Restaurant::class);
+
+            /** @var User $user */
+            $user = $this->getReference("user" . random_int(1, 20), User::class );
+
             $booking = (new Booking())
                 ->setUuid(Uuid::v4()->toRfc4122())
                 ->setGuestNumber(random_int(1, 6))
                 ->setOrderDate(new \DateTime("+".random_int(0, 10)." days"))
                 ->setOrderHour((new \DateTime())->setTime(random_int(12, 21), 0))
                 ->setAllergy(random_int(0, 1) ? 'Arachides' : null)
-                ->setCreatedAt(new \DateTime())
-                ->setRestaurant($restaurants[array_rand($restaurants)]);
-
+                ->setCreatedAt(new DateTime())
+                ->setRestaurant($restaurant)
+                ->setUser($user);
+                
             $manager->persist($booking);
         }
         
@@ -42,7 +53,8 @@ class BookingFixtures extends Fixture implements DependentFixtureInterface
     public function getDependencies(): array
     {
         return [
-            RestaurantFixtures::class,
+            RestaurantFixtures::class, // Doit exister avant la création de la data BookingFixtures
+            UserFixtures::class // Doit exister avant la création de la data BookingFixtures
         ];
     }
 }

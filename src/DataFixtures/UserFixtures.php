@@ -29,8 +29,13 @@ class UserFixtures extends Fixture
                 ->setCreatedAt(new DateTime())
                 ->setUuid(Uuid::v4()->toRfc4122());
 
-        $user->setPassword($this->passwordHasher->hashPassword($user, "password$i"));
-        $manager->persist($user);
+            $user->setPassword($this->passwordHasher->hashPassword($user, "password$i"));
+            $manager->persist($user);
+
+            // Ajout de la référence pour l'utilser dans d'autres fixtures
+
+            $this->addReference("user" . $i, $user);
+
 
 
         }
