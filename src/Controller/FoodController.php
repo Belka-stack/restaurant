@@ -129,10 +129,10 @@ final class FoodController extends AbstractController
 
     public function edit(int $id, Request $request): JsonResponse
     {
-        $food = $this->repository->findOneBy(['id' => $id]);
+        $food = $this->repository->find($id);
 
         if (!$food) {
-            throw $this->createNotFoundException("No Food found for ID {$id}");
+            throw $this->createNotFoundException("Aucune ressource Food trouvée pour l'ID {$id}");
         }
 
         $this->serializer->deserialize(
