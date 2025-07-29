@@ -2,8 +2,10 @@
 
 namespace App\Entity;
 
-use App\Repository\PictureRepository;
+use Symfony\Component\Uid\Uuid;
 use Doctrine\ORM\Mapping as ORM;
+use App\Repository\PictureRepository;
+use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ORM\Entity(repositoryClass: PictureRepository::class)]
 class Picture
@@ -12,6 +14,9 @@ class Picture
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
+
+    #[ORM\Column(length: 36, unique: true)]
+    private ?string $uuid = null;
 
     #[ORM\Column(length: 128)]
     private ?string $titre = null;
@@ -32,6 +37,18 @@ class Picture
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getUuid(): ?string
+    {
+        return $this->uuid;
+    }
+
+    public function setUuid(string $uuid): static
+    {
+        $this->uuid = $uuid;
+
+        return $this;
     }
 
     public function getTitre(): ?string

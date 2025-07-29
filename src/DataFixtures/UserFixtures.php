@@ -32,6 +32,7 @@ class UserFixtures extends Fixture
                 ->setLastName($faker->lastName())
                 ->setGuestNumber($faker->numberBetween(0,10))
                 ->setEmail($faker->unique()->safeEmail())
+                ->setApiToken('123456abcdef123456abcdef123456abcdef')
                 ->setCreatedAt(new DateTime())
                 ->setUuid(Uuid::v4()->toRfc4122());
 

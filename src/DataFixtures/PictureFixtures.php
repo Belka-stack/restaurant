@@ -11,6 +11,7 @@ use Doctrine\Persistence\ObjectManager;
 use App\DataFixtures\RestaurantFixtures;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\DependentFixtureInterface;
+use Symfony\Component\Uid\Uuid;
 
 class PictureFixtures extends Fixture implements DependentFixtureInterface
 {
@@ -26,6 +27,7 @@ class PictureFixtures extends Fixture implements DependentFixtureInterface
             $restaurant = $this->getReference("restaurant" . random_int(1, 5), Restaurant::class);
             
             $picture = (new Picture())
+                ->setUuid(Uuid::v4()->toRfc4122())
                 ->setTitre($faker->words(nb: 3, asText: true))
                 ->setSlug($faker->slug())
                 ->setRestaurant($restaurant)
