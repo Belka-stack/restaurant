@@ -6,6 +6,8 @@ use App\Entity\User;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use App\Repository\BookingRepository;
+use Symfony\Component\Serializer\Annotation\Groups;
+
 
 #[ORM\Entity(repositoryClass: BookingRepository::class)]
 class Booking
@@ -16,33 +18,42 @@ class Booking
     private ?int $id = null;
 
     #[ORM\Column(length: 36)]
+    #[Groups(['booking:read'])]
     private ?string $uuid = null;
 
     #[ORM\Column(type: Types::SMALLINT)]
+    #[Groups(['booking:read'])]
     private ?int $guestNumber = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[Groups(['booking:read'])]
     private ?\DateTime $orderDate = null;
 
     #[ORM\Column]
+    #[Groups(['booking:read'])]
     private ?\DateTime $orderHour = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['booking:read'])]
     private ?string $allergy = null;
 
     #[ORM\Column]
+    #[Groups(['booking:read'])]
     private ?\DateTime $createdAt = null;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['booking:read'])]
     private ?\DateTime $updatedAt = null;
 
 
     #[ORM\ManyToOne(inversedBy: 'bookings')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['booking:read'])]
     private ?Restaurant $restaurant = null;
 
     #[ORM\ManyToOne(inversedBy: 'bookings')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['booking:read'])]
     private ?User $user = null;
 
     public function getId(): ?int

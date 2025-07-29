@@ -7,6 +7,8 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
+
 
 #[ORM\Entity(repositoryClass: RestaurantRepository::class)]
 class Restaurant
@@ -17,24 +19,31 @@ class Restaurant
     private ?int $id = null;
 
     #[ORM\Column(length: 36)]
+    #[Groups(['restaurant:read', 'booking:read'])]
     private ?string $uuid = null;
 
     #[ORM\Column(length: 32)]
+    #[Groups(['restaurant:read', 'booking:read'])]
     private ?string $name = null;
 
     #[ORM\Column(type: Types::TEXT)]
+    #[Groups(['restaurant:read'])]
     private ?string $description = null;
 
     #[ORM\Column]
+    #[Groups(['restaurant:read'])]
     private array $amOpeningTime = [];
 
     #[ORM\Column]
+    #[Groups(['restaurant:read'])]
     private array $pmOpeningTime = [];
 
     #[ORM\Column(type: Types::SMALLINT)]
+    #[Groups(['restaurant:read'])]
     private ?int $maxGuest = null;
 
     #[ORM\Column]
+    #[Groups(['restaurant:read'])]
     private ?\DateTime $createdAt = null;
 
     #[ORM\Column(nullable: true)]
@@ -51,6 +60,7 @@ class Restaurant
      * @var Collection<int, Booking>
      */
     #[ORM\OneToMany(targetEntity: Booking::class, mappedBy: 'restaurant', orphanRemoval: true)]
+    #[Groups(['restaurant:read'])]
     private Collection $bookings;
 
     /**

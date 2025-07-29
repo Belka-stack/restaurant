@@ -3,6 +3,8 @@
 namespace App\Controller;
 
 use App\Entity\Booking;
+use App\Entity\Restaurant;
+use App\Entity\User;
 use OpenApi\Attributes as OA;
 use App\Repository\BookingRepository;
 use DateTime;
@@ -56,14 +58,42 @@ final class BookingController extends AbstractController
 
     public function new(Request $request): JsonResponse
     {
-        $booking = $this->serializer->deserialize($request->getContent(), Booking::class, 'json');
-        $booking->setUuid(Uuid::v4());
+        $data = json_decode($request->getContent(), true);
+
+        // Vérifier que les champs obligatoires sont présents
+
+        if (!isset($data['restaurant']) || !isset($data['user'])) {
+            return new JsonResponse(['error' => 'restaurant et User sont requis'], Response::HTTP_BAD_REQUEST);
+        }
+
+        //Récupérer des entité existante
+        $restaurant = $this->manager->getRepository(Restaurant::class)->find($data['restaurant']);
+        $user = $this->manager->getRepository(User::class)->find($data['user']);
+
+        if (!$restaurant || !$user) {
+            return new JsonResponse(['error' => 'Resturant ou utilsateur non trouvé'], Response::HTTP_NOT_FOUND);
+        }
+
+        // Créer une nouvelle réservation
+
+
+        $booking = new Booking();
+        $booking->setUuid(Uuid::v4()->toRfc4122());
         $booking->setCreatedAt(new DateTime());
+        $booking->setGuestNumber($data['guestNumber']);
+        $booking->setOrderDate(new \DateTime($data['orderDate']));
+        $booking->setOrderHour(new \DateTime($data['orderHour']));
+        $booking->setAllergy($data['allergy'] ?? null);
+        $booking->setRestaurant($restaurant);
+        $booking->setUser($user);
+
+
 
         $this->manager->persist($booking);
         $this->manager->flush();
 
-        $responseData = $this->serializer->serialize($booking, 'json');
+
+        $responseData = $this->serializer->serialize($booking, 'json', ['groups' => ['booking:read']]);
         $location = $this->urlGenerator->generate('app_api_booking_show', ['id' => $booking->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
 
         return new JsonResponse($responseData, Response::HTTP_CREATED, ['Location' => $location ], true);
@@ -93,8 +123,10 @@ final class BookingController extends AbstractController
             return new JsonResponse(['message' => "Réservation introuvable"], Response::HTTP_NOT_FOUND);
         }
 
+        $responseData = $this->serializer->serialize($booking, 'json', ['groups' => ['booking:read']]);
+
         return new JsonResponse(
-            $this->serializer->serialize($booking, 'json'),
+            $responseData,
             Response::HTTP_OK,
             [],
             true
