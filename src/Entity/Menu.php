@@ -2,11 +2,12 @@
 
 namespace App\Entity;
 
-use App\Repository\MenuRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use App\Repository\MenuRepository;
+use Doctrine\Common\Collections\Collection;
+use Doctrine\Common\Collections\ArrayCollection;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: MenuRepository::class)]
 class Menu
@@ -14,29 +15,43 @@ class Menu
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['menu:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 36)]
+    #[Groups(['menu:read'])]
     private ?string $uuid = null;
 
     #[ORM\Column(length: 64)]
+    #[Groups(['menu:read'])]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT)]
+    #[Groups(['menu:read'])]
     private ?string $description = null;
 
     #[ORM\Column(type: Types::SMALLINT)]
+    #[Groups(['menu:read'])]
     private ?int $price = null;
 
     #[ORM\Column]
+    #[Groups(['menu:read'])]
     private ?\DateTime $createdAt = null;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['menu:read'])]
     private ?\DateTime $updatedAt = null;
 
     #[ORM\ManyToOne(inversedBy: 'menus')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['menu:read'])]
     private ?Restaurant $restaurant = null;
+
+    #[Groups(['menu:read'])]
+    Public function getRestaurantId(): ?int
+    {
+        return $this->restaurant?->getId();
+    }
 
     /**
      * @var Collection<int, MenuCategory>

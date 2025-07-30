@@ -16,6 +16,7 @@ class Restaurant
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['restaurant:read', 'booking:read', 'menu:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 36)]

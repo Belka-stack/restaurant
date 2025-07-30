@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Menu;
+use App\Entity\Restaurant;
 use OpenApi\Attributes as OA;
 use App\Repository\MenuRepository;
 use DateTime;
@@ -52,15 +53,30 @@ final class MenuController extends AbstractController
     )]
     public function new(Request $request): JsonResponse
     {
+        $data = json_decode($request->getContent(),true);
+
+        // 1. Récupérer le restaurant par son ID
+        $restaurant = $this->manager->getRepository(Restaurant::class)->find($data['restaurant']);
+
+        if (!$restaurant) {
+            return $this->json(['message' => 'Restaurant non trouvé'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // 2. Créer manuellement l'objet menu
+        
+        $menu = new Menu();
         $menu = $this->serializer->deserialize($request->getContent(), Menu::class, 'json');
+        $menu->setTitle($data['title'] ?? null);
+        $menu->setDescription($data['description'] ?? null);
         $menu->setUuid(Uuid::v4()->toRfc4122());
         $menu->setCreatedAt(new DateTime());
+        $menu->setRestaurant($restaurant);
 
         $this->manager->persist($menu);
         $this->manager->flush();
 
         $location = $this->urlGenerator->generate('app_api_menu_show', ['id' => $menu->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
-        $responseData = $this->serializer->serialize($menu, 'json');
+        $responseData = $this->serializer->serialize($menu, 'json', ['groups' => ['menu:read'] ]);
 
         return new JsonResponse($responseData, Response::HTTP_CREATED, ['Location' => $location], true);
     }
@@ -86,7 +102,10 @@ final class MenuController extends AbstractController
             return $this->json(['message' => 'Menu non trouvé'], Response::HTTP_NOT_FOUND);
         }
 
-        return new JsonResponse($this->serializer->serialize($menu, 'json'), Response::HTTP_OK, [], true);
+        return new JsonResponse($this->serializer->serialize($menu, 'json', ['groups' => ['menu:read']]),
+        Response::HTTP_OK,
+        [],
+        true);
     }
 
     #[Route('/{id}', name: 'edit', methods: ['PUT'])]
@@ -131,7 +150,7 @@ final class MenuController extends AbstractController
         $menu->setUpdatedAt(new DateTime());
         $this->manager->flush();
 
-        return $this->json(['message' => 'menu mis à jour']);
+        return $this->json(['message' => 'Menu mis à jour']);
     }
 
     #[Route('/{id}', name: 'delete', methods: ['DELETE'])]
