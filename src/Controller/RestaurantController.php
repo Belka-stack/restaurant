@@ -30,26 +30,26 @@ final class RestaurantController extends AbstractController
     #[Route(name: 'new', methods: ['POST'])]
     // Documantation API: Attributs à la route /new
     #[OA\Post(
-    path: '/api/restaurant',
-    summary: 'Créer un nouveau restaurant',
-    security: [ ['X-AUTH-TOKEN' => []] ], //security={{"Bearer":{}}} sur chaque méthode annotée OpenAPI (cela permet à Swagger/Nelmio d’exiger un token Bearer pour tester ces routes)
-    requestBody: new OA\RequestBody(
+        path: '/api/restaurant',
+        summary: 'Créer un nouveau restaurant',
+        security: [ ['X-AUTH-TOKEN' => []] ], //security={{"Bearer":{}}} sur chaque méthode annotée OpenAPI (cela permet à Swagger/Nelmio d’exiger un token Bearer pour tester ces routes)
+        requestBody: new OA\RequestBody(
         required: true,
         content: new OA\JsonContent(
             type: 'object',
             required: ['name'],
             properties: [
-                new OA\Property(property: 'name', type: 'string'),
-                new OA\Property(property: 'address', type: 'string'),
-                new OA\Property(property: 'postalCode', type: 'string'),
-                new OA\Property(property: 'city', type: 'string'),
-                new OA\Property(property: 'country', type: 'string')
+                    new OA\Property(property: 'name', type: 'string'),
+                    new OA\Property(property: 'description', type: 'string'),
+                    new OA\Property(property: 'amOpeningTime', type: 'array', items: new OA\Items(type: 'string')),
+                    new OA\Property(property: 'pmOpeningTime', type: 'array', items: new OA\Items(type: 'string')),
+                    new OA\Property(property: 'maxGuest', type: 'integer'),
             ]
         )
     ),
     responses: [
         new OA\Response(response: 201, description: 'Restaurant créé'),
-        new OA\Response(response: 400, description: 'Données invalides')
+        new OA\Response(response: 400, description: 'Requête invalides')
     ]
     )]
 
@@ -62,14 +62,15 @@ final class RestaurantController extends AbstractController
         $this->manager->persist($restaurant);
         $this->manager->flush();
 
-        $responseData = $this->serializer->serialize($restaurant, 'json');
-        $location = $this->urlGenerator->generate('app_api_restaurant_show', ['id' => $restaurant->getId()], urlGeneratorInterface::ABSOLUTE_URL,
+        $responseData = $this->serializer->serialize($restaurant, 'json', ['groups' => ['restaurant:read']]);
+        $location = $this->urlGenerator->generate('app_api_restaurant_show', ['id' => $restaurant->getId()], UrlGeneratorInterface::ABSOLUTE_URL,
         );
 
         return new JsonResponse(
             $responseData,
             Response::HTTP_CREATED,
-            ["Location" => $location]
+            ["Location" => $location],
+            true
         );
     }
 
@@ -95,14 +96,14 @@ final class RestaurantController extends AbstractController
 
     public function show(int $id): JsonResponse
     {
-        $restaurant = $this->repository->findOneBy(['id' => $id]);
+        $restaurant = $this->repository->find($id);
 
         if (!$restaurant) {
 
             return new JsonResponse(null, Response::HTTP_NOT_FOUND);
         }
 
-        $responseData = $this->serializer->serialize($restaurant, 'json');
+        $responseData = $this->serializer->serialize($restaurant, 'json', ['groups' => ['restaurant:read']]);
 
         return new JsonResponse($responseData, Response::HTTP_OK, [], true);
     }
@@ -113,6 +114,18 @@ final class RestaurantController extends AbstractController
     path: '/api/restaurant/{id}',
     summary: 'Modifier un restaurant existant',
     security: [ ['X-AUTH-TOKEN' => []] ],
+    requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'name', type: 'string'),
+                    new OA\Property(property: 'description', type: 'string'),
+                    new OA\Property(property: 'amOpeningTime', type: 'array', items: new OA\Items(type: 'string')),
+                    new OA\Property(property: 'pmOpeningTime', type: 'array', items: new OA\Items(type: 'string')),
+                    new OA\Property(property: 'maxGuest', type: 'integer'),
+                ]
+            )
+        ),
     parameters: [
         new OA\Parameter(
             name: 'id',
@@ -121,19 +134,6 @@ final class RestaurantController extends AbstractController
             schema: new OA\Schema(type: 'integer')
         )
     ],
-    requestBody: new OA\RequestBody(
-        required: true,
-        content: new OA\JsonContent(
-            type: 'object',
-            properties: [
-                new OA\Property(property: 'name', type: 'string'),
-                new OA\Property(property: 'address', type: 'string'),
-                new OA\Property(property: 'postalCode', type: 'string'),
-                new OA\Property(property: 'city', type: 'string'),
-                new OA\Property(property: 'country', type: 'string')
-            ]
-        )
-    ),
     responses: [
         new OA\Response(response: 200, description: 'Restaurant mis à jour'),
         new OA\Response(response: 404, description: 'Restaurant non trouvé')
@@ -142,7 +142,7 @@ final class RestaurantController extends AbstractController
 
     public function edit(int $id, Request $request): JsonResponse
     {
-        $restaurant = $this->repository->findOneBy(['id' => $id]);
+        $restaurant = $this->repository->find($id);
 
         if (!$restaurant) {
             throw $this->createNotFoundException("No Restaurant found for {$id} id");
@@ -194,7 +194,7 @@ final class RestaurantController extends AbstractController
         $this->manager->remove($restaurant);
         $this->manager->flush();
 
-        return new JsonResponse(['message' => "Food resource deleted"], Response::HTTP_NO_CONTENT);
+        return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 
 }

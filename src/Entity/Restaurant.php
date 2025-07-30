@@ -20,11 +20,11 @@ class Restaurant
     private ?int $id = null;
 
     #[ORM\Column(length: 36)]
-    #[Groups(['restaurant:read', 'booking:read'])]
+    #[Groups(['restaurant:read'])]
     private ?string $uuid = null;
 
     #[ORM\Column(length: 32)]
-    #[Groups(['restaurant:read', 'booking:read'])]
+    #[Groups(['restaurant:read'])]
     private ?string $name = null;
 
     #[ORM\Column(type: Types::TEXT)]
@@ -48,6 +48,7 @@ class Restaurant
     private ?\DateTime $createdAt = null;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['restaurant:read'])]
     private ?\DateTime $updatedAt = null;
 
 
