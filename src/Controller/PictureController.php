@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Picture;
+use App\Entity\Restaurant;
 use OpenApi\Attributes as OA;
 use App\Repository\PictureRepository;
 use DateTime;
@@ -51,7 +52,21 @@ final class PictureController extends AbstractController
     )]
     public function new(Request $request): JsonResponse
     {
-        $picture = $this->serializer->deserialize($request->getContent(), Picture::class, 'json');
+        $data = json_decode($request->getContent(), true);
+
+        // Récupération du restaurant existant
+        $restaurant = $this->manager->getRepository(Restaurant::class)->find($data['restaurant']);
+
+        if (!$restaurant) {
+            return new JsonResponse(['message' => 'Restaurant non trouvé'], Response::HTTP_BAD_REQUEST);
+        }
+
+        // Création manuelle de l'objet picture
+
+        $picture = new picture();
+        $picture->setTitre($data['titre'] ?? '');
+        $picture->setSlug($data['slug'] ?? '');
+        $picture->setRestaurant($restaurant);
         $picture->setUuid(Uuid::v4()->toRfc4122());
         $picture->setCreatedAt(new DateTime());
 
@@ -59,7 +74,8 @@ final class PictureController extends AbstractController
         $this->manager->flush();
 
         $location = $this->urlGenerator->generate('app_api_picture_show', ['id' => $picture->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
-        $responseData = $this->serializer->serialize($picture, 'json');
+        // Sérialisation avec groupes pour éviter circular reference
+        $responseData = $this->serializer->serialize($picture, 'json', ['groups' => ['picture:read']]);
 
         return new JsonResponse($responseData, Response::HTTP_CREATED, ['Location' => $location], true);
     }
@@ -85,8 +101,11 @@ final class PictureController extends AbstractController
             return $this->json(['message' => 'Image non trouvée'], Response::HTTP_NOT_FOUND);
         }
 
+        // Sérialisation avec groupe pour éviter circular reference
+        $responseData = $this->serializer->serialize($picture, 'json', ['groups' => ['picture:read']]);
+
         return new JsonResponse(
-            $this->serializer->serialize($picture, 'json'),
+            $responseData,
             Response::HTTP_OK,
             [],
             true

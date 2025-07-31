@@ -13,21 +13,27 @@ class Picture
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['picture:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 36, unique: true)]
+    #[Groups(['picture:read'])]
     private ?string $uuid = null;
 
     #[ORM\Column(length: 128)]
+    #[Groups(['picture:read'])]
     private ?string $titre = null;
 
     #[ORM\Column(length: 128)]
+    #[Groups(['picture:read'])]
     private ?string $slug = null;
 
     #[ORM\Column]
+    #[Groups(['picture:read'])]
     private ?\DateTime $createdAt = null;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(['picture:read'])]
     private ?\DateTime $updatedAt = null;
 
     #[ORM\ManyToOne(inversedBy: 'pictures')]
@@ -37,6 +43,17 @@ class Picture
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function getRestaurantId(): ?int
+    {
+        return $this->restaurant?->getId();
+    }
+
+    #[Groups(['picture:read'])]
+    public function getRestaurantUuid(): ?string
+    {
+        return $this->restaurant?->getUuid();
     }
 
     public function getUuid(): ?string
