@@ -16,6 +16,7 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 // Les routes comportent des attributs permettant faire des test sur le Bundle Nelmio à l'url suivante : https://127.0.0.1:8000/api/doc afin d'améliorer la documentation.Un template Twig a été générer specifique via la commande : composer require twig asset
 #[Route('/api', name: 'app_api_')]
+#[OA\Tag(name: 'Security')]
 final class SecurityController extends AbstractController
 {
     public function __construct(private EntityManagerInterface $manager,private SerializerInterface $serializer)
@@ -50,17 +51,20 @@ final class SecurityController extends AbstractController
     {
         $user = $this->serializer->deserialize($request->getContent(), User::class, 'json');
         $user->setPassword($passwordHasher->hashPassword($user, $user->getPassword()));
+        $user->setRoles(['ROLE_USER']);
         $user->setApiToken(bin2hex(random_bytes(32)));
         $user->setUuid(Uuid::v4());
-        $user->setCreatedAt(new \dateTime());
+        $user->setCreatedAt(new \DateTime());
 
         $this->manager->persist($user);
         $this->manager->flush();
 
         return new JsonResponse([
-            'user' => $user->getUserIdentifier(), 'apiToken' => $user->getApiToken(), 'role' => $user->getRoles()
-        ],Response::HTTP_CREATED
-    );
+            'user' => $user->getUserIdentifier(),
+            'apiToken' => $user->getApiToken(),
+            'roles' => $user->getRoles()
+        ], Response::HTTP_CREATED
+        );
     }
 
     #[Route('/login', name: 'login', methods: 'POST')]
@@ -90,10 +94,15 @@ final class SecurityController extends AbstractController
             return new JsonResponse(['message' => 'Missing credentials'], Response::HTTP_UNAUTHORIZED);
         }
 
+        // A chaque connexion, on régénère un token unique
+        $user->setApiToken(bin2hex(random_bytes(32)));
+        $this->manager->flush();
+
         return new JsonResponse([
             'user'  => $user->getUserIdentifier(),
             'apiToken' => $user->getApiToken(),
             'roles' => $user->getRoles(),
+            'message' => 'Authentification réussie !'
         ]);
     }
 
@@ -129,21 +138,21 @@ final class SecurityController extends AbstractController
 
     public function me(#[CurrentUser] ?User $user): JsonResponse
     {
-        $user = $this->getUser();
+    
 
-        if (null instanceof User) {
-            return $this->json(['message' => 'User not found'], 404);
+        if (!$user instanceof User) {
+            return $this->json(['message' => 'User not found'], Response::HTTP_NOT_FOUND);
         }
 
-        $data = [
+        return $this->json([
             'id' => $user->getId(),
             'email' => $user->getEmail(),
-            'firstName' => $user->getFirstname(),
+            'firstName' => $user->getFirstName(),
             'lastName' => $user->getLastName(),
             'guestNumber' => $user->getGuestNumber(),
             'allergy' => $user->getAllergy(),
-        ];
-        return new JsonResponse($data);
+            'roles' => $user->getRoles()
+        ]);
     }
 
     // Route /account/edit : Cette route attend une requête PUT avec un corps JSON contenant les champs à mettre à jour. Elle met à jour les informations de l'utilisateur, y compris le mot de passe (qui est haché avant d'être stocké) et la date de mise à jour.
@@ -177,37 +186,96 @@ final class SecurityController extends AbstractController
 
     public function edit(Request $request, UserPasswordHasherInterface $passwordHasher, #[CurrentUser] ?User $user): JsonResponse
     {
-        if (null === $user) {
+        if (!$user instanceof User) {
             return new JsonResponse(['message' => 'User not found'],
             Response::HTTP_UNAUTHORIZED);
         }
 
         $data = json_decode($request->getContent(), true);
 
-        if (null === $data) {
+        if (!is_array($data)) {
             return new JsonResponse(['message' => 'Invalid JSON'], Response::HTTP_BAD_REQUEST);
         }
+        
+        // Sécurisation des champs modifiables 
 
-        if (isset($data['firstName'])){
-            $user->setFirstName($data['firstName']);
-        }
-        if (isset($data['lastName'])){
-            $user->setLastName($data['lastName']);
-        }
-        if (isset($data['guestNumber'])){
-            $user->setGuestNumber($data['guestNumber']);
-        }
-        if (isset($data['allergy'])){
-            $user->setAllergy($data['allergy']);
-        }
-        if (isset($data['password'])){
-            $user->setPassword($passwordHasher->hashPassword($user, $data['password']));
-        }
+        if (isset($data['firstName'])) $user->setFirstName($data['firstName']);
+        if (isset($data['lastName'])) $user->setLastName($data['lastName']);
+        if (isset($data['guestNumber'])) $user->setGuestNumber($data['guestNumber']);
+        if (isset($data['allergy']))$user->setAllergy($data['allergy']);
+        if (isset($data['password'])) $user->setPassword($passwordHasher->hashPassword($user, $data['password']));
 
         $user->setUpdatedAt(new \DateTime());
         $this->manager->flush();
 
         return new JsonResponse(['status' => 'User updated ']);
+    }
+
+    #[Route('/logout', name: 'logout', methods: ['POST'])]
+    #[OA\Post(
+        path: '/api/logout',
+        summary: 'Déconnexion de l\'utilsateur',
+        tags: ['Security'],
+        security: [ ['X-AUTH-TOKEN' => []] ],
+        responses: [
+            new OA\Response(response: 200, description: 'Déconnexion réussie'),
+            new OA\Response(response: 401, description: 'Non authentifié')
+        ]
+    )]
+    public function logout(#[CurrentUser] ?User $user): JsonResponse
+    {
+        if (!$user) {
+            return new JsonResponse(['message' => 'Non authentifié'],Response::HTTP_UNAUTHORIZED);
+        }
+
+        return new JsonResponse(['message' => 'Déconnexion réussie'], Response::HTTP_OK);
+
+    }
+
+    #[Route('/account/delete/{id}', name: 'account_delete', methods: ['DELETE'])]
+    #[OA\Delete(
+        path: '/api/account/delete/{id}',
+        summary: 'Supprimer un utilsateur',
+        tags: ['Security'],
+        security: [ ['X-AUTH-TOKEN' => []] ],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                schema: new OA\Schema(type: 'integer'),
+                description: 'ID de l\'utilsateur à supprimer'
+            )
+        ],
+        responses: [
+            new OA\Response(response: 204, description: 'Utilisateur supprimé'),
+            new OA\Response(response: 403, description: 'Accès non autorisé'),
+            new OA\Response(response: 404, description: 'Utilisateur non trouvé')
+        ]
+    )]
+    public function delete(int $id, #[CurrentUser] ?User $currentUser): JsonResponse
+    {
+        if (!$currentUser) {
+            return new JsonResponse(['message' => 'Non authentifié'], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $userToDelete = $this->manager->getRepository(User::class)->find($id);
+
+        if (!$userToDelete) {
+            return new JsonResponse(['message' => 'Utilisateur non trouvé'], Response::HTTP_NOT_FOUND);
+        }
+
+        // Vérification des droits : l'utilsateur peut supprimer son propre compte ou un admin peut supprimer n'importe quel compte
+        if (!$this->isGranted('ROLE_ADMIN') && $userToDelete->getId() !== $currentUser->getId()) {
+            return new JsonResponse(['message' => 'Accès refusé : vous ne pouvez supprimer que votre compte'], Response::HTTP_FORBIDDEN);
+        }
+
+        // Suppression de l'utilisateur
+
+        $this->manager->remove($userToDelete);
+        $this->manager->flush();
+
+        return new JsonResponse(['message' => 'Compte supprimé avec succès'], Response::HTTP_OK);
     }
 
 }

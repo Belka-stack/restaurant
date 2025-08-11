@@ -3,13 +3,14 @@
 namespace App\Controller;
 
 use DateTime;
-use OpenApi\Attributes as OA;
 use App\Entity\Restaurant;
+use OpenApi\Attributes as OA;
 use Symfony\Component\Uid\Uuid;
 use App\Repository\RestaurantRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\{JsonResponse, Request, Response};
@@ -17,6 +18,7 @@ use Symfony\Component\HttpFoundation\{JsonResponse, Request, Response};
 // Les routes comportent des attributs permettant faire des test sur le Bundle Nelmio à l'url suivante : https://127.0.0.1:8000/api/doc afin d'améliorer la documentation. Un template Twig a été générer specifique via la commande : composer require twig asset
 
 #[Route('/api/restaurant', name: 'app_api_restaurant_')]
+#[OA\Tag(name: 'Restaurant')]
 final class RestaurantController extends AbstractController
 {   
     public function __construct(
@@ -37,7 +39,7 @@ final class RestaurantController extends AbstractController
         required: true,
         content: new OA\JsonContent(
             type: 'object',
-            required: ['name'],
+            required: ['name', 'maxGuest'],
             properties: [
                     new OA\Property(property: 'name', type: 'string'),
                     new OA\Property(property: 'description', type: 'string'),
@@ -49,10 +51,11 @@ final class RestaurantController extends AbstractController
     ),
     responses: [
         new OA\Response(response: 201, description: 'Restaurant créé'),
+        new OA\Response(response: 403, description: 'Accès non autorisé : nécessite le rôle ROLE_ADMIN'),
         new OA\Response(response: 400, description: 'Requête invalides')
     ]
     )]
-
+    #[IsGranted('ROLE_ADMIN')]
     public function new(Request $request): JsonResponse
     {
         $restaurant = $this->serializer->deserialize($request->getContent(), Restaurant::class, 'json');
@@ -139,7 +142,7 @@ final class RestaurantController extends AbstractController
         new OA\Response(response: 404, description: 'Restaurant non trouvé')
     ]
     )]
-
+    #[IsGranted('ROLE_ADMIN')]    
     public function edit(int $id, Request $request): JsonResponse
     {
         $restaurant = $this->repository->find($id);
@@ -183,7 +186,7 @@ final class RestaurantController extends AbstractController
         new OA\Response(response: 404, description: 'Restaurant non trouvé')
     ]
     )]
-
+    #[IsGranted('ROLE_ADMIN')]
     public function delete(int $id): JsonResponse
     {
         $restaurant = $this-> repository->findOneBy(['id' => $id]);

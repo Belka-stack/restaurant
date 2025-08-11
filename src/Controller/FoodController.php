@@ -3,13 +3,14 @@
 namespace App\Controller;
 
 use DateTime;
-use OpenApi\Attributes as OA;
 use App\Entity\Food;
+use OpenApi\Attributes as OA;
 use Symfony\Component\Uid\Uuid;
 use App\Repository\FoodRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\{Response, JsonResponse, Request};
@@ -17,6 +18,7 @@ use Symfony\Component\HttpFoundation\{Response, JsonResponse, Request};
 // Les routes comportent des attributs permettant faire des test sur le Bundle Nelmio à l'url suivante : https://127.0.0.1:8000/api/doc afin d'améliorer la documentation. Un template Twig a été générer specifique via la commande : composer require twig asset
 
 #[Route('/api/food', name: 'app_api_food_')]
+#[OA\Tag(name: 'Food')]
 final class FoodController extends AbstractController
 {
     public function __construct(
@@ -51,7 +53,7 @@ final class FoodController extends AbstractController
         new OA\Response(response: 400, description: 'Requête invalide')
     ]
     )]
-
+    #[IsGranted('ROLE_ADMIN')]
     public function new(Request $request): JsonResponse
     {
         $food = $this->serializer->deserialize($request->getContent(), Food::class, 'json');
@@ -126,7 +128,7 @@ final class FoodController extends AbstractController
         new OA\Response(response: 404, description: 'Ressource non trouvée')
     ]
     )]
-
+    #[IsGranted('ROLE_ADMIN')]
     public function edit(int $id, Request $request): JsonResponse
     {
         $food = $this->repository->find($id);
@@ -164,7 +166,7 @@ final class FoodController extends AbstractController
         new OA\Response(response: 404, description: 'Ressource non trouvée')
     ]
     )]
-
+    #[IsGranted('ROLE_ADMIN')]
     public function delete(int $id): Response
     {
         $food = $this->repository->findOneBy(['id' => $id]);

@@ -2,21 +2,22 @@
 
 namespace App\Controller;
 
+use DateTime;
 use App\Entity\Picture;
 use App\Entity\Restaurant;
 use OpenApi\Attributes as OA;
+use Symfony\Component\Uid\Uuid;
 use App\Repository\PictureRepository;
-use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
 #[Route('/api/picture', name: 'app_api_picture_')]
 #[OA\Tag(name: 'Picture')]
@@ -50,6 +51,7 @@ final class PictureController extends AbstractController
             new OA\Response(response: 400, description: 'Requête invalide')
         ]
     )]
+    #[IsGranted('ROLE_ADMIN')]
     public function new(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
@@ -111,7 +113,7 @@ final class PictureController extends AbstractController
             true
         );
     }
-
+    
     #[Route('/{id}', name: 'edit', methods: ['PUT'])]
     #[OA\Put(
         path: '/api/picture/{id}',
@@ -134,6 +136,7 @@ final class PictureController extends AbstractController
             new OA\Response(response: 404, description: 'Image non trouvée')
         ]
     )]
+    #[IsGranted('ROLE_ADMIN')]
     public function edit(int $id, Request $request): JsonResponse
     {
         $picture = $this->repository->find($id);
@@ -175,6 +178,7 @@ final class PictureController extends AbstractController
             new OA\Response(response: 404, description: 'Image non trouvée')
         ]
     )]
+    #[IsGranted('ROLE_ADMIN')]
     public function delete(int $id): JsonResponse
     {
         $picture = $this->repository->find($id);

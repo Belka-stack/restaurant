@@ -3,15 +3,16 @@
 namespace App\Controller;
 
 use DateTime;
-use OpenApi\Attributes as OA;
 use App\Entity\Category;
+use OpenApi\Attributes as OA;
 use Symfony\Component\Uid\Uuid;
 use App\Repository\CategoryRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\HttpFoundation\{JsonResponse, Response, Request};
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\{JsonResponse, Response, Request};
 
 // Les routes comportent des attributs permettant faire des test sur le Bundle Nelmio à l'url suivante : https://127.0.0.1:8000/api/doc afin d'améliorer la documentation. Un template Twig a été générer specifique via la commande : composer require twig asset
 #[Route('/api/category', name: 'app_api_category_')]
@@ -54,6 +55,7 @@ final class CategoryController extends AbstractController
             )
         ]
     )]
+    #[IsGranted('ROLE_ADMIN')]
     public function new(Request $request): JsonResponse
     {
         $category = $this->serializer->deserialize($request->getContent(), Category::class, 'json');
@@ -135,6 +137,7 @@ final class CategoryController extends AbstractController
             new OA\Response(response: 404, description: 'Catégorie non trouvée')
         ]
     )]
+    #[IsGranted('ROLE_ADMIN')]
     public function edit(int $id, Request $request): JsonResponse
     {
         $category = $this->repository->find($id);
@@ -173,6 +176,7 @@ final class CategoryController extends AbstractController
             new OA\Response(response: 404, description: 'Catégorie non trouvée')
         ]
     )]
+    #[IsGranted('ROLE_ADMIN')]
     public function delete(int $id): JsonResponse
     {
         $category = $this->repository->find($id);

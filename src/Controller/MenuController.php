@@ -2,20 +2,21 @@
 
 namespace App\Controller;
 
+use DateTime;
 use App\Entity\Menu;
 use App\Entity\Restaurant;
 use OpenApi\Attributes as OA;
+use Symfony\Component\Uid\Uuid;
 use App\Repository\MenuRepository;
-use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\Uid\Uuid;
 
 #[Route('/api/menu', name: 'app_api_menu_')]
 #[OA\Tag(name: 'menu')]
@@ -51,6 +52,7 @@ final class MenuController extends AbstractController
         ]
 
     )]
+    #[IsGranted('ROLE_ADMIN')]
     public function new(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(),true);
@@ -132,6 +134,7 @@ final class MenuController extends AbstractController
         ]
 
     )]
+    #[IsGranted('ROLE_ADMIN')]
     public function edit(int $id, Request $request): JsonResponse
     {
         $menu = $this->repository->find($id);
@@ -166,6 +169,7 @@ final class MenuController extends AbstractController
             new OA\Response(response: 404, description:'Menu non trouvé')
         ]
     )]
+    #[IsGranted('ROLE_ADMIN')]
     public function delete(int $id): JsonResponse
     {
         $menu = $this->repository->find($id);

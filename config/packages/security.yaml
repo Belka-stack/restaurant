@@ -33,10 +33,28 @@ security:
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
-        # - { path: ^/admin, roles: ROLE_ADMIN } 
+        # Public
         - { path: ^/api/registration, roles : PUBLIC_ACCESS}
         - { path: ^/api/login, roles : PUBLIC_ACCESS}
         - { path : ^/api/doc, roles : PUBLIC_ACCESS }
+        - { path : ^/api/restaurant$, roles : PUBLIC_ACCESS }
+        - { path : ^/api/restaurant/\d+$, roles : PUBLIC_ACCESS }
+        - { path : ^/api/menu, roles : PUBLIC_ACCESS, methods: [GET] }
+        - { path : ^/api/category, roles : PUBLIC_ACCESS, methods: [GET] }
+        - { path : ^/api/food, roles : PUBLIC_ACCESS, methods: [GET] }
+        - { path : ^/api/picture, roles : PUBLIC_ACCESS, methods: [GET] }
+
+        # Admin uniquement
+        - { path: ^/api/restaurant, roles: ROLE_ADMIN, methods: [POST, PUT, DELETE] }
+        - { path: ^/api/menu, roles: ROLE_ADMIN, methods: [POST, PUT, DELETE] }
+        - { path: ^/api/category, roles: ROLE_ADMIN, methods: [POST, PUT, DELETE] }
+        - { path: ^/api/food, roles: ROLE_ADMIN, methods: [POST, PUT, DELETE] }
+        - { path: ^/api/picture, roles: ROLE_ADMIN, methods: [POST, PUT, DELETE] }
+
+        #Booking (utilsateur connecté)
+        - { path: ^/api/booking, roles: ROLE_USER}
+
+        # accès aux API par défaut pour les utilisateurs connectés
         - { path: ^/api, roles: ROLE_USER }
 
 when@test:
