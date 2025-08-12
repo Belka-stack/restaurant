@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -58,7 +60,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(nullable: true)]
     private ?\DateTime $updatedAt = null;
-    
+
+    /**
+     *  Relation avec Booking
+     * - orphanRemoval: true → supprime automatiquement les réservations orphelines
+     * - cascade: ['remove'] → supprime tous les bookings liés quand on supprime l'utilisateur
+     */
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Booking::class, orphanRemoval: true, cascade: ['remove'])]
+    private Collection $bookings;
+
+    public function __construct()
+    {
+        $this->bookings = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {

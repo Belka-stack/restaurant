@@ -32,10 +32,12 @@ class UserFixtures extends Fixture
                 ->setLastName($faker->lastName())
                 ->setGuestNumber($faker->numberBetween(0,10))
                 ->setEmail($faker->unique()->safeEmail())
-                ->setApiToken('123456abcdef123456abcdef123456abcdef')
+                ->setApiToken(bin2hex(random_bytes(32)))
                 ->setCreatedAt(new DateTime())
                 ->setUuid(Uuid::v4()->toRfc4122());
+ 
 
+        
             
             // Mot de passe fixe
             $password = 'password';

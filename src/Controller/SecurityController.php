@@ -94,10 +94,6 @@ final class SecurityController extends AbstractController
             return new JsonResponse(['message' => 'Missing credentials'], Response::HTTP_UNAUTHORIZED);
         }
 
-        // A chaque connexion, on régénère un token unique
-        $user->setApiToken(bin2hex(random_bytes(32)));
-        $this->manager->flush();
-
         return new JsonResponse([
             'user'  => $user->getUserIdentifier(),
             'apiToken' => $user->getApiToken(),
@@ -255,20 +251,26 @@ final class SecurityController extends AbstractController
     )]
     public function delete(int $id, #[CurrentUser] ?User $currentUser): JsonResponse
     {
+        // Vérifier sil'utilsateur est connecté
         if (!$currentUser) {
             return new JsonResponse(['message' => 'Non authentifié'], Response::HTTP_UNAUTHORIZED);
         }
 
+        // Récupérer l'utilsateur à supprimer
         $userToDelete = $this->manager->getRepository(User::class)->find($id);
 
         if (!$userToDelete) {
             return new JsonResponse(['message' => 'Utilisateur non trouvé'], Response::HTTP_NOT_FOUND);
         }
 
-        // Vérification des droits : l'utilsateur peut supprimer son propre compte ou un admin peut supprimer n'importe quel compte
-        if (!$this->isGranted('ROLE_ADMIN') && $userToDelete->getId() !== $currentUser->getId()) {
-            return new JsonResponse(['message' => 'Accès refusé : vous ne pouvez supprimer que votre compte'], Response::HTTP_FORBIDDEN);
+        // Si l'utilisateu courent veut supprimer un autre compte et qu'il n'est pas admin => interdit
+        
+        if ($currentUser->getId() !== $id && !$this->isGranted('ROLE_ADMIN')) {
+            return new JsonResponse([
+                'message' => 'Accès refuse : vous ne pouvez supprimer que votre propre compte'
+            ], Response::HTTP_FORBIDDEN);
         }
+        
 
         // Suppression de l'utilisateur
 
