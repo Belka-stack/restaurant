@@ -7,6 +7,7 @@ use App\Entity\Restaurant;
 use App\Entity\User;
 use OpenApi\Attributes as OA;
 use App\Repository\BookingRepository;
+use App\Service\BookingService;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -28,7 +29,8 @@ final class BookingController extends AbstractController
         private EntityManagerInterface $manager,
         private BookingRepository $repository,
         private SerializerInterface $serializer,
-        private UrlGeneratorInterface $urlGenerator
+        private UrlGeneratorInterface $urlGenerator,
+        private BookingService $bookingService // ✅ injection du service métier 
     )
     {}
 
@@ -62,63 +64,68 @@ final class BookingController extends AbstractController
     {
         $data = json_decode($request->getContent(), true);
 
-        // --- DÉBUT DES VALIDATIONS DE CHAMPS REQUIS ---
-        if (!isset($data['guestNumber'])) {
-            return new JsonResponse(['error' => 'Champ guestNumber requis'], Response::HTTP_BAD_REQUEST);
-        }
-        if (!isset($data['orderDate'])) {
-            return new JsonResponse(['error' => 'Champ orderDate requis'], Response::HTTP_BAD_REQUEST);
-        }
-        if (!isset($data['orderHour'])) {
-            return new JsonResponse(['error' => 'Champ orderHour requis'], Response::HTTP_BAD_REQUEST);
-        }
-        if (!isset($data['restaurant'])) {
-            return new JsonResponse(['error' => 'Champ restaurant requis'], Response::HTTP_BAD_REQUEST);
-        }
-        // --- FIN DES VALIDATIONS DE CHAMPS REQUIS ---
+        // Validation des champs requis
+        foreach (['guestNumber', 'orderDate', 'orderHour', 'restaurant'] as $field) {
+            if (!isset($data[$field])) {
+                return new JsonResponse(["error" => "Champ $field requis"], Response::HTTP_BAD_REQUEST);
+            }
+        } 
 
+        // Récupération du restaurant
         $restaurant = $this->manager->getRepository(Restaurant::class)->find($data['restaurant']);
         if (!$restaurant) {
             return new JsonResponse(['error' => 'Restaurant non trouvé'], Response::HTTP_NOT_FOUND);
         }
 
-        // --- DÉBUT DE LA LOGIQUE CORRIGÉE POUR L'UTILISATEUR ---
-        // On initialise la variable $user avec l'utilisateur connecté par défaut.
+        // Détermination de l'utilsateur de la réservation
+
         $user = $currentUser;
 
-        // Si l'utilisateur est un ADMIN et qu'un ID utilisateur est spécifié, on l'utilise.
-        if ($this->isGranted('ROLE_ADMIN') && isset($data['user'])) {
-            $userForBooking = $this->manager->getRepository(User::class)->find($data['user']);
-        
-            // Si l'utilisateur spécifié par l'admin n'existe pas, on renvoie une erreur.
-            if (!$userForBooking) {
-                return new JsonResponse(['error' => 'Utilisateur spécifié non trouvé'], Response::HTTP_NOT_FOUND);
-            } 
-            
-            // On remplace l'utilisateur par défaut par celui spécifié par l'admin.
-            $user = $userForBooking;
+        // Protection : si un simple user envoie "user", on bloque
+
+        if (!$this->isGranted('ROLE_ADMIN') && isset($data['user'])) {
+            return new JsonResponse(
+                ['error' => 'Vous ne pouvez pas faire de réservation pour un autre utilisateur'],
+                Response::HTTP_FORBIDDEN
+            );
         }
-        // Le code continue, et la variable $user est maintenant toujours définie.
-        // --- FIN DE LA LOGIQUE CORRIGÉE ---
 
-        // Créer une nouvelle réservation
-        $booking = new Booking();
-        $booking->setUuid(Uuid::v4()->toRfc4122());
-        $booking->setCreatedAt(new DateTime());
-        $booking->setGuestNumber($data['guestNumber']);
-        $booking->setOrderDate(new \DateTime($data['orderDate']));
-        $booking->setOrderHour(new \DateTime($data['orderHour']));
-        $booking->setAllergy($data['allergy'] ?? null);
-        $booking->setRestaurant($restaurant);
-        $booking->setUser($user);
 
-        $this->manager->persist($booking);
-        $this->manager->flush();
+        // Seul un admin peut créer une réservation pour quelqu'un d'autre
+
+        if ($this->isGranted('ROLE_ADMIN') && isset($data['user'])) {
+            
+                $userForBooking = $this->manager->getRepository(User::class)->find($data['user']);
+                if (!$userForBooking) {
+                    return new JsonResponse(['error' => 'Utilisateur spécifié non trouvé'], Response::HTTP_NOT_FOUND);
+            }
+            $user = $userForBooking;
+
+            
+        }
+
+        // ✅ Utilisation du service BookingService
+
+        try {
+            $bookingDateTime = new \DateTime($data['orderDate'].' '.$data['orderHour']);
+            $booking = $this->bookingService->createBooking(
+                $restaurant,
+                $user,
+                $data['guestNumber'],
+                new \DateTime($data['orderDate']),
+                new \DateTime($data['orderHour'])
+            );
+            $booking->setOrderDate(new \DateTime($data['orderDate']));
+            $booking->setOrderHour(new \DateTime($data['orderHour']));
+            $booking->setAllergy($data['allergy'] ?? null);
+        } catch (\Exception $e) {
+            return new JsonResponse(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
+        }
 
         $responseData = $this->serializer->serialize($booking, 'json', ['groups' => ['booking:read']]);
         $location = $this->urlGenerator->generate('app_api_booking_show', ['id' => $booking->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
 
-        return new JsonResponse($responseData, Response::HTTP_CREATED, ['Location' => $location ], true);
+        return new JsonResponse($responseData, Response::HTTP_CREATED, ['Location' => $location], true);
     }
 
     #[Route('/{id}', name: 'show', methods: ['GET'])]

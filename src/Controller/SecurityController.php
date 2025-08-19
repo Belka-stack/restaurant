@@ -4,6 +4,7 @@ namespace App\Controller;
 
 
 use App\Entity\User;
+use App\Service\UserService;
 use OpenApi\Attributes as OA;
 use Symfony\Component\Uid\Uuid;
 use Doctrine\ORM\EntityManagerInterface;
@@ -19,10 +20,12 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 #[OA\Tag(name: 'Security')]
 final class SecurityController extends AbstractController
 {
-    public function __construct(private EntityManagerInterface $manager,private SerializerInterface $serializer)
-    {
-
-    }
+    public function __construct(
+        private EntityManagerInterface $manager,
+        private SerializerInterface $serializer,
+        private UserService $userService // ✅ injection du service métier
+        )
+    {}
     #[Route('/registration', name: 'registration', methods: ['POST'])]
     // Documantation API: Attributs à la route /registration
     #[OA\Post(
@@ -263,19 +266,14 @@ final class SecurityController extends AbstractController
             return new JsonResponse(['message' => 'Utilisateur non trouvé'], Response::HTTP_NOT_FOUND);
         }
 
-        // Si l'utilisateu courent veut supprimer un autre compte et qu'il n'est pas admin => interdit
-        
-        if ($currentUser->getId() !== $id && !$this->isGranted('ROLE_ADMIN')) {
-            return new JsonResponse([
-                'message' => 'Accès refuse : vous ne pouvez supprimer que votre propre compte'
-            ], Response::HTTP_FORBIDDEN);
+        // Vérification des doits
+        if (!$this->isGranted('ROLE_ADMIN') && $userToDelete->getId() !== $currentUser->getId()) {
+            return new JsonResponse(['message' => 'Accès refusé : vous ne pouvez supprimer que votre compte'], Response::HTTP_FORBIDDEN);
         }
-        
 
-        // Suppression de l'utilisateur
+        //  ✅ Délégation au service UserService
 
-        $this->manager->remove($userToDelete);
-        $this->manager->flush();
+        $this->userService->deleteUser($userToDelete);
 
         return new JsonResponse(['message' => 'Compte supprimé avec succès'], Response::HTTP_OK);
     }
