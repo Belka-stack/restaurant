@@ -1,4 +1,4 @@
-Parfait ✅ Je vais reprendre **tout l’historique de notre conversation** et condenser ça dans un **README clair et structuré**, qui reflète exactement ton projet et montre au jury que tu as travaillé **méthodiquement** et avec de vraies bonnes pratiques.
+
 
 ---
 
@@ -69,8 +69,8 @@ Le projet inclut :
 ### 1. Cloner le projet
 
 ```bash
-git clone https://github.com/TON-PSEUDO/restaurant-booking-api.git
-cd restaurant-booking-api
+git clone https://github.com/Belka-stack/symfony-restaurant-api.git
+cd symfony-restaurant-api.git
 ```
 
 ### 2. Installer les dépendances
@@ -208,4 +208,3 @@ X-AUTH-TOKEN: votretoken
 
 ---
 
-👉 Veux-tu que j’y ajoute aussi un **schéma d’architecture (entités ↔ services ↔ contrôleurs)** en image pour mettre dans ton README GitHub et impressionner le jury ?
